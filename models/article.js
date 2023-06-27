@@ -5,6 +5,8 @@ const createDomPurify = require("dompurify");
 const { JSDOM } = require("jsdom");
 const dompurify = createDomPurify(new JSDOM().window);
 
+marked.use({ mangle: false, headerIds: false });
+
 const articleSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -26,11 +28,19 @@ const articleSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  sanitizedHtml: {
+    type: String,
+    required: true,
+  },
 });
 
 articleSchema.pre("validate", function (next) {
   if (this.title) {
     this.slug = slugify(this.title, { lower: true, strict: true });
+  }
+
+  if (this.markdown) {
+    this.sanitizedHtml = dompurify.sanitize(marked.parse(this.markdown));
   }
 
   next();
